@@ -30,7 +30,7 @@ function build(): Plugin {
           rollupOptions: { input },
           polyfillDynamicImport: false
         },
-        ssr: { external: ['vite-plugin-ssr'] }
+        ssr: { external: ['vite-plugin-ssr', '@vite-plugin-ssr/vue-router'] }
       }
     },
     transform: (_src, id) => {
