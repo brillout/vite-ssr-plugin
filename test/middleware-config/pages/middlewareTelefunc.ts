@@ -1,14 +1,16 @@
+import { decorate } from '@universal-middleware/router'
+
 export { middlewareTelefunc }
 
-import { telefunc } from 'telefunc'
 import type { UniversalMiddleware } from '@universal-middleware/core'
-import type { Middleware } from './Middleware'
+import { telefunc } from 'telefunc'
 
 const telefuncUniversalMiddleware: UniversalMiddleware = async (request, context, runtime) => {
   const url = request.url.toString()
-  const urlParsed = new URL(url)
 
-  if (urlParsed.pathname !== '/_telefunc') return
+  // No need for that. UniversalRouter and its variants should handle it
+  // const urlParsed = new URL(url)
+  // if (urlParsed.pathname !== '/_telefunc') return
 
   const httpResponse = await telefunc({
     url,
@@ -28,10 +30,8 @@ const telefuncUniversalMiddleware: UniversalMiddleware = async (request, context
   })
 }
 
-const middlewareTelefunc: Middleware[] = [
-  {
-    name: 'telefunc',
-    order: 'pre',
-    value: telefuncUniversalMiddleware
-  }
-]
+const middlewareTelefunc = decorate(telefuncUniversalMiddleware, {
+  name: 'telefunc',
+  method: 'POST',
+  path: '/_telefunc'
+})

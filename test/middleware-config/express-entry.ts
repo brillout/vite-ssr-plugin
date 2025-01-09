@@ -1,10 +1,9 @@
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createMiddleware } from '@universal-middleware/express'
+import { type DecoratedMiddleware, applyExpress } from '@universal-middleware/router'
 import express from 'express'
 import { getMiddlewares } from 'vike/__internal'
-import type { Middleware } from './pages/Middleware'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -21,7 +20,7 @@ async function startServer() {
     app.use(express.static(`${root}/dist/client`))
   } else {
     // Instantiate Vite's development server and integrate its middleware to our server.
-    // ⚠️ We should instantiate it *only* in development. (It isn't needed in production
+    // ! We should instantiate it *only* in development. (It isn't needed in production
     // and would unnecessarily bloat our server in production.)
     const vite = await import('vite')
     const viteDevMiddleware = (
@@ -33,22 +32,13 @@ async function startServer() {
     app.use(viteDevMiddleware)
   }
 
-  const middlewares = (await getMiddlewares()) as Middleware[]
-  middlewares.sort((m1, m2) => getOrder(m1.order) - getOrder(m2.order))
-  middlewares.forEach((middlewareSpec) => {
-    const middleware = middlewareSpec.value
-    app.all('*', createMiddleware(() => middleware)())
-  })
+  const middlewares = (await getMiddlewares()) as DecoratedMiddleware[]
+  // `applyExpress` will move to: import { apply } from '@universal-middleware/express'
+  applyExpress(app, middlewares)
 
   app.listen(port, () => {
     console.log(`Server listening on http://localhost:${port}`)
   })
 
   return app
-}
-
-function getOrder(order: Middleware['order']): number {
-  if (order === 'post') return 100
-  if (order === 'pre') return -100
-  return order
 }
